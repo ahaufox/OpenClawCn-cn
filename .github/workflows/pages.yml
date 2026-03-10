@@ -6,9 +6,8 @@ name: 部署官网
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'docs/**'
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -36,7 +35,7 @@ jobs:
       - name: 上传 artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'docs'
+          path: "docs"
 
       - name: 部署到 GitHub Pages
         id: deployment

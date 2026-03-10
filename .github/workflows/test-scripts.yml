@@ -7,21 +7,15 @@ name: Test Scripts
 
 on:
   push:
-    paths:
-      - '*.sh'
-      - '*.ps1'
-      - 'tests/**'
-      - '.github/workflows/test-scripts.yml'
-    branches:
-      - main
-      - develop
+    tags:
+      - "v*"
   pull_request:
     paths:
-      - '*.sh'
-      - '*.ps1'
-      - 'tests/**'
-      - '.github/workflows/test-scripts.yml'
-  workflow_dispatch:  # 允许手动触发
+      - "*.sh"
+      - "*.ps1"
+      - "tests/**"
+      - ".github/workflows/test-scripts.yml"
+  workflow_dispatch: # 允许手动触发
 
 jobs:
   # ============================================================
@@ -30,63 +24,63 @@ jobs:
   test-bash:
     name: Bash 脚本测试
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
-      
+
       - name: 安装 ShellCheck
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck
-      
+
       - name: 安装 Bats
         run: |
           git clone https://github.com/bats-core/bats-core.git
           cd bats-core
           sudo ./install.sh /usr/local
-      
+
       - name: 安装 Bats 辅助库
         run: |
           # bats-support
           git clone https://github.com/bats-core/bats-support.git /tmp/bats-support
           sudo mkdir -p /usr/local/lib/bats
           sudo cp -r /tmp/bats-support /usr/local/lib/bats/
-          
+
           # bats-assert
           git clone https://github.com/bats-core/bats-assert.git /tmp/bats-assert
           sudo cp -r /tmp/bats-assert /usr/local/lib/bats/
-      
+
       - name: 运行 ShellCheck (install.sh)
         run: |
           echo "🔍 检查 install.sh 语法..."
           shellcheck install.sh || true
-      
+
       - name: 运行 ShellCheck (docker-deploy.sh)
         run: |
           echo "🔍 检查 docker-deploy.sh 语法..."
           shellcheck docker-deploy.sh || true
-      
+
       - name: 语法验证
         run: |
           echo "🔍 验证 Bash 脚本语法..."
           bash -n install.sh
           bash -n docker-deploy.sh
           echo "✅ 语法验证通过"
-      
+
       - name: 运行 Bats 测试
         run: |
           echo "🧪 运行 Bats 测试..."
-          
+
           # 如果测试文件存在
           if [ -f "tests/bash/install.bats" ]; then
             bats tests/bash/install.bats
           fi
-          
+
           if [ -f "tests/bash/docker-deploy.bats" ]; then
             bats tests/bash/docker-deploy.bats
           fi
-      
+
       - name: 测试摘要
         if: always()
         run: |
@@ -103,22 +97,22 @@ jobs:
   test-powershell:
     name: PowerShell 脚本测试
     runs-on: windows-latest
-    
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
-      
+
       - name: 安装 PSScriptAnalyzer
         shell: pwsh
         run: |
           Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck
-      
+
       - name: 安装 Pester
         shell: pwsh
         run: |
           Install-Module -Name Pester -Force -SkipPublisherCheck
           Import-Module Pester -MinimumVersion 5.0
-      
+
       - name: 运行 PSScriptAnalyzer (install.ps1)
         shell: pwsh
         run: |
@@ -130,7 +124,7 @@ jobs:
           } else {
             Write-Host "✅ 无严重问题"
           }
-      
+
       - name: 运行 PSScriptAnalyzer (docker-deploy.ps1)
         shell: pwsh
         run: |
@@ -141,12 +135,12 @@ jobs:
           } else {
             Write-Host "✅ 无严重问题"
           }
-      
+
       - name: 语法验证
         shell: pwsh
         run: |
           Write-Host "🔍 验证 PowerShell 脚本语法..."
-          
+
           $errors = $null
           $null = [System.Management.Automation.PSParser]::Tokenize(
             (Get-Content install.ps1 -Raw), [ref]$errors
@@ -154,30 +148,30 @@ jobs:
           if ($errors) {
             throw "install.ps1 语法错误: $($errors | Out-String)"
           }
-          
+
           $null = [System.Management.Automation.PSParser]::Tokenize(
             (Get-Content docker-deploy.ps1 -Raw), [ref]$errors
           )
           if ($errors) {
             throw "docker-deploy.ps1 语法错误: $($errors | Out-String)"
           }
-          
+
           Write-Host "✅ 语法验证通过"
-      
+
       - name: 运行 Pester 测试
         shell: pwsh
         run: |
           Write-Host "🧪 运行 Pester 测试..."
-          
+
           $config = New-PesterConfiguration
           $config.Run.Path = "tests/powershell"
           $config.Output.Verbosity = "Detailed"
           $config.Run.Exit = $true
           $config.TestResult.Enabled = $true
           $config.TestResult.OutputPath = "TestResults.xml"
-          
+
           Invoke-Pester -Configuration $config
-      
+
       - name: 上传测试结果
         if: always()
         uses: actions/upload-artifact@v4
@@ -185,20 +179,20 @@ jobs:
           name: powershell-test-results
           path: TestResults.xml
           retention-days: 7
-      
+
       - name: 测试摘要
         if: always()
         shell: pwsh
         run: |
           $summary = @"
           ## PowerShell 测试结果
-          
+
           | 脚本 | 语法检查 | 测试 |
           |------|----------|------|
           | install.ps1 | ✅ | ✅ |
           | docker-deploy.ps1 | ✅ | ✅ |
           "@
-          
+
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $summary
 
   # ============================================================
@@ -209,26 +203,26 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-bash, test-powershell]
     if: always()
-    
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
-      
+
       - name: 检查脚本一致性
         run: |
           echo "🔍 检查 Bash 和 PowerShell 脚本功能一致性..."
-          
+
           # 检查两个平台的脚本都有相同的帮助参数
           echo "检查帮助参数..."
           grep -q "\-\-help" install.sh && echo "✅ install.sh 有 --help"
           grep -q "\-Help" install.ps1 && echo "✅ install.ps1 有 -Help"
-          
+
           grep -q "\-\-help" docker-deploy.sh && echo "✅ docker-deploy.sh 有 --help"
           grep -q "\-Help" docker-deploy.ps1 && echo "✅ docker-deploy.ps1 有 -Help"
-          
+
           echo ""
           echo "✅ 跨平台检查完成"
-      
+
       - name: 最终摘要
         run: |
           echo "## 测试总结" >> $GITHUB_STEP_SUMMARY

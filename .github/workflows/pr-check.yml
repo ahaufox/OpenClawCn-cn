@@ -17,14 +17,9 @@
 name: PR 检查
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'translations/**'
-      - 'cli/**'
-      - 'scripts/**'
-      - '*.sh'
-      - '*.ps1'
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
 
 jobs:
@@ -32,7 +27,7 @@ jobs:
   validate-translations:
     name: 验证翻译规则
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -40,43 +35,43 @@ jobs:
       - name: 设置 Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: 验证 JSON 格式
         run: |
           echo "🔍 检查所有翻译 JSON 文件格式..."
           ERROR_COUNT=0
-          
+
           for file in $(find translations -name "*.json"); do
             if ! jq empty "$file" 2>/dev/null; then
               echo "❌ JSON 格式错误: $file"
               ERROR_COUNT=$((ERROR_COUNT + 1))
             fi
           done
-          
+
           if [ $ERROR_COUNT -gt 0 ]; then
             echo "❌ 发现 $ERROR_COUNT 个 JSON 格式错误"
             exit 1
           fi
-          
+
           echo "✅ 所有 JSON 文件格式正确"
 
       - name: 验证翻译配置
         run: |
           echo "🔍 检查翻译配置文件..."
-          
+
           # 检查 config.json 存在且格式正确
           if [ ! -f "translations/config.json" ]; then
             echo "❌ 缺少 translations/config.json"
             exit 1
           fi
-          
+
           # 验证配置结构
           jq -e '.modules' translations/config.json > /dev/null || {
             echo "❌ config.json 缺少 modules 字段"
             exit 1
           }
-          
+
           echo "✅ 翻译配置验证通过"
 
       - name: 检查翻译规则状态
@@ -88,43 +83,43 @@ jobs:
       - name: 验证面板数据
         run: |
           echo "🔍 检查面板数据..."
-          
+
           PANEL_DATA="translations/panel/panel-data.json"
-          
+
           if [ ! -f "$PANEL_DATA" ]; then
             echo "⚠️ 面板数据文件不存在，跳过检查"
             exit 0
           fi
-          
+
           # 验证 JSON 格式
           jq empty "$PANEL_DATA" || {
             echo "❌ panel-data.json 格式错误"
             exit 1
           }
-          
+
           # 验证必需字段
           jq -e '.faq' "$PANEL_DATA" > /dev/null || {
             echo "❌ panel-data.json 缺少 faq 字段"
             exit 1
           }
-          
+
           jq -e '.plugins' "$PANEL_DATA" > /dev/null || {
             echo "❌ panel-data.json 缺少 plugins 字段"
             exit 1
           }
-          
+
           jq -e '.about' "$PANEL_DATA" > /dev/null || {
             echo "❌ panel-data.json 缺少 about 字段"
             exit 1
           }
-          
+
           echo "✅ 面板数据验证通过"
 
   # ==================== Python 脚本检查 ====================
   validate-scripts:
     name: 验证 Python 脚本
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -132,7 +127,7 @@ jobs:
       - name: 设置 Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: 安装依赖
         run: |
@@ -142,7 +137,7 @@ jobs:
         run: |
           echo "🔍 检查 Python 脚本语法..."
           ERROR_COUNT=0
-          
+
           for file in scripts/*.py; do
             if [ -f "$file" ]; then
               echo "检查: $file"
@@ -152,12 +147,12 @@ jobs:
               fi
             fi
           done
-          
+
           if [ $ERROR_COUNT -gt 0 ]; then
             echo "❌ 发现 $ERROR_COUNT 个 Python 语法错误"
             exit 1
           fi
-          
+
           echo "✅ 所有 Python 脚本语法正确"
 
       - name: 运行 pyflakes 检查
@@ -170,7 +165,7 @@ jobs:
   validate-shell:
     name: 验证 Shell 脚本
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -183,7 +178,7 @@ jobs:
       - name: 检查 Bash 脚本语法
         run: |
           echo "🔍 检查 Bash 脚本语法..."
-          
+
           for file in *.sh; do
             if [ -f "$file" ]; then
               echo "检查: $file"
@@ -193,7 +188,7 @@ jobs:
               }
             fi
           done
-          
+
           echo "✅ 所有 Bash 脚本语法正确"
 
       - name: 运行 ShellCheck
@@ -208,7 +203,7 @@ jobs:
     needs: [validate-translations, validate-scripts, validate-shell]
     runs-on: ubuntu-latest
     if: always()
-    
+
     steps:
       - name: 生成摘要
         run: |
@@ -216,19 +211,19 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| 检查项 | 状态 |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|------|" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.validate-translations.result }}" == "success" ]; then
             echo "| 翻译规则验证 | ✅ 通过 |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| 翻译规则验证 | ❌ 失败 |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.validate-scripts.result }}" == "success" ]; then
             echo "| Python 脚本检查 | ✅ 通过 |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| Python 脚本检查 | ❌ 失败 |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.validate-shell.result }}" == "success" ]; then
             echo "| Shell 脚本检查 | ✅ 通过 |" >> $GITHUB_STEP_SUMMARY
           else

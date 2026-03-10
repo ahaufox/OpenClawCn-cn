@@ -22,20 +22,20 @@
 name: 最新版构建 (Nightly)
 
 on:
-  schedule:
-    # 每小时42分构建（错峰避免冲突）
-    - cron: '42 * * * *'
+  push:
+    tags:
+      - "nightly" # 专门用于触发 nightly 构建的 tag
   workflow_dispatch:
     inputs:
       force_build:
-        description: '强制构建（跳过版本检查）'
+        description: "强制构建（跳过版本检查）"
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 env:
   UPSTREAM_REPO: openclaw/openclaw
-  NODE_VERSION: '22'
+  NODE_VERSION: "22"
 
 permissions:
   contents: write
@@ -50,7 +50,7 @@ jobs:
       upstream_version: ${{ steps.check.outputs.version }}
       upstream_sha: ${{ steps.check.outputs.sha }}
       nightly_version: ${{ steps.check.outputs.nightly_version }}
-    
+
     steps:
       - name: 检测上游变更
         id: check
@@ -58,15 +58,15 @@ jobs:
           # 获取上游 npm 版本
           UPSTREAM_VERSION=$(curl -s https://registry.npmjs.org/openclaw/latest | jq -r '.version')
           echo "📦 上游版本: $UPSTREAM_VERSION"
-          
+
           # 获取上游最新 commit
           UPSTREAM_SHA=$(curl -s https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/commits/main | jq -r '.sha' | cut -c1-7)
           echo "📝 上游 SHA: $UPSTREAM_SHA"
-          
+
           # 获取上次构建记录的 SHA（从 nightly release body 中提取）
           LAST_SHA=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/tags/nightly | jq -r '.body // ""' | grep -oP '<!-- upstream_sha:\K[a-f0-9]+' || echo "")
           echo "📝 上次 SHA: ${LAST_SHA:-无记录}"
-          
+
           # 判断是否有变化
           if [ "$UPSTREAM_SHA" != "$LAST_SHA" ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
@@ -75,11 +75,11 @@ jobs:
             echo "has_changes=false" >> $GITHUB_OUTPUT
             echo "⏭️ 上游无变更，跳过构建"
           fi
-          
+
           # 生成 nightly 版本号
           TIMESTAMP=$(date +%Y%m%d%H%M)
           NIGHTLY_VERSION="${UPSTREAM_VERSION}-nightly.${TIMESTAMP}"
-          
+
           echo "version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
           echo "sha=$UPSTREAM_SHA" >> $GITHUB_OUTPUT
           echo "nightly_version=$NIGHTLY_VERSION" >> $GITHUB_OUTPUT
@@ -101,7 +101,7 @@ jobs:
   publish:
     needs: [check-upstream, build]
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -124,7 +124,7 @@ jobs:
             JS_FILE=$(ls openclaw/dist/control-ui/assets/index-*.js | head -1)
             echo "📁 检测到旧版目录结构: control-ui/assets"
           fi
-          
+
           if [ -n "$JS_FILE" ]; then
             echo "JS 文件: $JS_FILE"
             echo "文件大小: $(ls -la "$JS_FILE" | awk '{print $5}') bytes"
@@ -145,7 +145,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: 发布到 npm (nightly 标签)
         working-directory: openclaw
@@ -185,52 +185,52 @@ jobs:
           prerelease: true
           body: |
             <!-- upstream_sha:${{ needs.check-upstream.outputs.upstream_sha }} -->
-            
+
             ## 🌙 OpenClaw 汉化版 - 最新版 (Nightly)
-            
+
             > ⚠️ **警告**：此为每小时自动构建版本，追踪上游最新代码，可能包含未完全测试的更改。
             > 
             > 🔒 **需要稳定版？** 请安装 `@latest`：`npm install -g @qingchencloud/openclaw-zh@latest`
-            
+
             **构建时间**: ${{ needs.build.outputs.build_date }} ${{ needs.build.outputs.build_time }} (UTC)
             **上游版本**: ${{ needs.check-upstream.outputs.upstream_version }}
             **上游 SHA**: ${{ needs.check-upstream.outputs.upstream_sha }}
             **Nightly 版本**: ${{ needs.check-upstream.outputs.nightly_version }}
             **发布类型**: 最新版 (Nightly) - 每小时自动构建
-            
+
             ---
-            
+
             ### 📊 汉化统计
-            
+
             | 指标 | 数量 | 状态 |
             |------|------|------|
             | ✅ 应用规则 | **${{ needs.build.outputs.applied }}** 条 | 成功 |
             | ⏭️ 已存在 | ${{ needs.build.outputs.existed }} 条 | 跳过 |
             | ⚠️ 未匹配 | ${{ needs.build.outputs.failed }} 条 | 需关注 |
             | 📝 替换操作 | ${{ needs.build.outputs.files }} 次 | - |
-            
+
             ---
-            
+
             ### 📦 安装 Nightly 版本
-            
+
             ```bash
             # 安装 nightly 版本
             npm install -g @qingchencloud/openclaw-zh@nightly
-            
+
             # 切换回稳定版
             npm install -g @qingchencloud/openclaw-zh@latest
             ```
-            
+
             ---
-            
+
             ### 🔗 相关链接
-            
+
             - 🔥 官网: https://openclaw.qt.cool/
             - 📖 稳定版: https://github.com/1186258278/OpenClawChineseTranslation/releases/latest
             - 📦 npm: https://www.npmjs.com/package/@qingchencloud/openclaw-zh
-            
+
             ---
-            
+
             **武汉晴辰天下网络科技有限公司** | https://qingchencloud.com/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -334,7 +334,7 @@ jobs:
     needs: check-upstream
     if: needs.check-upstream.outputs.has_changes == 'false' && github.event.inputs.force_build != 'true'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 无变更摘要
         run: |

@@ -53,12 +53,12 @@ irm https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/docke
 <a id="images"></a>
 ## 镜像地址
 
-| 镜像源 | 地址 | 适用场景 |
-|--------|------|----------|
-| **Docker Hub** | `1186258278/openclaw-zh` | **国内用户推荐**，速度快 |
-| **ghcr.io** | `ghcr.io/1186258278/openclaw-zh` | 海外用户 / 默认 |
+| 镜像源         | 地址                             | 适用场景                         |
+| -------------- | -------------------------------- | -------------------------------- |
+| **Docker Hub** | `1186258278/openclaw-zh`         | **国内用户强烈推荐**，拉取速度快 |
+| **ghcr.io**    | `ghcr.io/1186258278/openclaw-zh` | 海外用户 / 默认                  |
 
-> 以下命令默认使用 ghcr.io 地址。**国内用户**将 `ghcr.io/1186258278/openclaw-zh` 替换为 `1186258278/openclaw-zh` 即可加速。
+> **注意**：国内用户无需翻墙即可通过 Docker Hub 镜像源极速下载。
 
 <p align="right"><a href="#top">回到顶部</a></p>
 
@@ -207,12 +207,12 @@ http://服务器IP:18789/overview
 
 **其他解决方案对比：**
 
-| 方案 | 说明 | 适用场景 |
-|------|------|----------|
-| **设置 Token** | 设置 `gateway.auth.token`，Dashboard 输入 token | 内网（最简单） |
-| **SSH 端口转发** | `ssh -L 18789:127.0.0.1:18789 user@server` | 更安全 |
-| **Tailscale Serve** | 自动 HTTPS 访问 | 跨网络访问 |
-| **Nginx + HTTPS** | 配置 SSL 证书反向代理 | 生产环境 |
+| 方案                | 说明                                            | 适用场景       |
+| ------------------- | ----------------------------------------------- | -------------- |
+| **设置 Token**      | 设置 `gateway.auth.token`，Dashboard 输入 token | 内网（最简单） |
+| **SSH 端口转发**    | `ssh -L 18789:127.0.0.1:18789 user@server`      | 更安全         |
+| **Tailscale Serve** | 自动 HTTPS 访问                                 | 跨网络访问     |
+| **Nginx + HTTPS**   | 配置 SSL 证书反向代理                           | 生产环境       |
 
 <p align="right"><a href="#top">回到顶部</a></p>
 
@@ -414,17 +414,17 @@ docker system prune -a --volumes
 
 ## 常见错误排查
 
-| 错误信息 | 原因 | 解决方案 |
-|----------|------|----------|
-| `Gateway auth is set to token, but no token is configured` | 需要 token 认证但未配置 | `docker exec openclaw openclaw config set gateway.auth.token YOUR_TOKEN` |
-| `Missing config. Run openclaw setup` | 未初始化配置 | `docker exec openclaw openclaw setup` |
-| `control ui requires HTTPS or localhost` | HTTP 远程访问被浏览器安全策略阻止 | 使用 Token 认证或配置 HTTPS 反向代理 |
-| `Proxy headers detected from untrusted address` | 反向代理地址未添加到信任列表 | `docker exec openclaw openclaw config set gateway.trustedProxies '["127.0.0.1"]'` |
-| `pairing required` | 新设备需要配对授权 | `docker exec openclaw openclaw devices list` 然后 `devices approve <id>` |
-| `gateway token mismatch` | Token 认证失败 | `docker exec openclaw openclaw dashboard --print-url` 获取带 token 的 URL |
-| 容器启动后立即退出 | 缺少必要配置 | `docker logs openclaw` 查看日志 |
-| `EACCES: permission denied` | 数据卷权限问题 | 确保使用 named volume 而非 bind mount |
-| Docker 拉取镜像提示 denied | 登录缓存问题 | `docker logout ghcr.io` 后重试 |
+| 错误信息                                                   | 原因                              | 解决方案                                                                          |
+| ---------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------- |
+| `Gateway auth is set to token, but no token is configured` | 需要 token 认证但未配置           | `docker exec openclaw openclaw config set gateway.auth.token YOUR_TOKEN`          |
+| `Missing config. Run openclaw setup`                       | 未初始化配置                      | `docker exec openclaw openclaw setup`                                             |
+| `control ui requires HTTPS or localhost`                   | HTTP 远程访问被浏览器安全策略阻止 | 使用 Token 认证或配置 HTTPS 反向代理                                              |
+| `Proxy headers detected from untrusted address`            | 反向代理地址未添加到信任列表      | `docker exec openclaw openclaw config set gateway.trustedProxies '["127.0.0.1"]'` |
+| `pairing required`                                         | 新设备需要配对授权                | `docker exec openclaw openclaw devices list` 然后 `devices approve <id>`          |
+| `gateway token mismatch`                                   | Token 认证失败                    | `docker exec openclaw openclaw dashboard --print-url` 获取带 token 的 URL         |
+| 容器启动后立即退出                                         | 缺少必要配置                      | `docker logs openclaw` 查看日志                                                   |
+| `EACCES: permission denied`                                | 数据卷权限问题                    | 确保使用 named volume 而非 bind mount                                             |
+| Docker 拉取镜像提示 denied                                 | 登录缓存问题                      | `docker logout ghcr.io` 后重试                                                    |
 
 <p align="right"><a href="#top">回到顶部</a></p>
 
