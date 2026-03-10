@@ -1,15 +1,9 @@
 # ============================================================
 # OpenClaw 汉化发行版 - Windows 一键安装脚本
 # 
-# OpenClaw: 开源个人 AI 助手平台
-# 官方网站: https://openclaw.ai/
-# 汉化项目: https://openclaw.qt.cool/
-#
-# 武汉晴辰天下网络科技有限公司 | https://qingchencloud.com/
-#
 # 用法:
-#   irm https://xxx/install.ps1 | iex                    # 安装稳定版
-#   & ([scriptblock]::Create((irm https://xxx/install.ps1))) -Nightly  # 安装最新版
+#   irm https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.ps1 | iex                    # 安装稳定版
+#   & ([scriptblock]::Create((irm https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.ps1))) -Nightly  # 安装最新版
 # ============================================================
 
 param(
@@ -34,8 +28,8 @@ if ($Help) {
     Write-Host "OpenClaw 汉化版安装脚本" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "用法:"
-    Write-Host "  irm https://xxx/install.ps1 | iex                              # 安装稳定版"
-    Write-Host "  iex ""& { `$(irm https://xxx/install.ps1) } -Nightly""          # 安装最新版"
+    Write-Host "  irm https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.ps1 | iex                              # 安装稳定版"
+    Write-Host "  iex ""& { `$(irm https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.ps1) } -Nightly""          # 安装最新版"
     Write-Host "  .\install.ps1 -ShengsuanyunKey sk-xxx                           # 安装并配置胜算云"
     Write-Host ""
     Write-Host "选项:"
@@ -53,20 +47,6 @@ if ($Help) {
     exit 0
 }
 
-# Logo
-function Show-Banner {
-    Write-Host ""
-    Write-Host "╔═══════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║                                                           ║" -ForegroundColor Cyan
-    Write-Host "║     🦞 OpenClaw 汉化发行版                                ║" -ForegroundColor Cyan
-    Write-Host "║        开源个人 AI 助手平台                              ║" -ForegroundColor Cyan
-    Write-Host "║                                                           ║" -ForegroundColor Cyan
-    Write-Host "║     武汉晴辰天下网络科技有限公司                          ║" -ForegroundColor Cyan
-    Write-Host "║     https://openclaw.qt.cool/                             ║" -ForegroundColor Cyan
-    Write-Host "║                                                           ║" -ForegroundColor Cyan
-    Write-Host "╚═══════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
-    Write-Host ""
-}
 
 # 检查 Node.js
 function Test-NodeVersion {
@@ -114,31 +94,44 @@ function Test-Npm {
     }
 }
 
-# 卸载原版
-function Remove-OriginalOpenClaw {
+# 检查环境并准备安装
+function Prepare-Installation {
+    Write-Host "🔍 环境检查..." -ForegroundColor Blue
+    Test-NodeVersion
+    Test-Npm
+
+    # 检测是否在本项目源码目录下
+    if ((Test-Path ".\cli") -and (Test-Path ".\translations") -and (Test-Path ".\openclaw")) {
+        Write-Host "📂 检测到您当前处于 OpenClaw 汉化版源码目录" -ForegroundColor Yellow
+        $choice = Read-Host "是否直接对本地 './openclaw' 源码进行汉化？(y/n)"
+        if ($choice -eq 'y') {
+            Write-Host "🛠️  正在应用本地汉化补丁..." -ForegroundColor Blue
+            node cli/index.mjs apply --target=./openclaw
+            exit 0
+        }
+    }
+
+    # 检查原版 OpenClaw 是否已安装
     $installed = npm list -g openclaw 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "⚠ 检测到原版 OpenClaw，正在卸载..." -ForegroundColor Yellow
-        npm uninstall -g openclaw 2>$null
-        Write-Host "✓ 原版已卸载" -ForegroundColor Green
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "⚠ 正在安装原版 OpenClaw..." -ForegroundColor Yellow
+        npm install -g openclaw
     }
 }
 
-# 安装汉化版
-function Install-ChineseVersion {
-    Write-Host ""
-    Write-Host "📦 正在安装 OpenClaw 汉化版 [$VersionName]..." -ForegroundColor Blue
-    Write-Host ""
+# 安装/运行汉化补丁 (通过 npx)
+function Invoke-ChinesePatch {
+    Write-Host "📦 正在获取并应用汉化补丁..." -ForegroundColor Blue
     
-    npm install -g "@qingchencloud/openclaw-zh@$NpmTag"
+    # 使用 npx 运行补丁工具
+    & npx -y "@qingchencloud/openclaw-zh@$NpmTag" apply
     
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ 安装失败，请检查网络连接" -ForegroundColor Red
+        Write-Host "❌ 汉化失败" -ForegroundColor Red
         exit 1
     }
     
-    Write-Host ""
-    Write-Host "✓ 安装完成！" -ForegroundColor Green
+    Write-Host "✓ 汉化成功！" -ForegroundColor Green
 }
 
 # 运行安装后自动初始化 (条件性)
@@ -200,10 +193,7 @@ function Invoke-SetupIfNeeded {
         return
     }
     
-    Write-Host ""
-    Write-Host "🔧 正在运行初始化配置..." -ForegroundColor Blue
-    Write-Host "   (设置环境变量 OPENCLAW_SKIP_SETUP=1 可跳过此步骤)" -ForegroundColor Yellow
-    Write-Host ""
+    Write-Host "🔧 自动初始化..." -ForegroundColor Blue
     
     # 尝试运行非交互式 setup
     try {
@@ -221,66 +211,18 @@ function Invoke-SetupIfNeeded {
 
 # 成功信息
 function Show-Success {
-    Write-Host ""
-    Write-Host "╔═══════════════════════════════════════════════════════════╗" -ForegroundColor Green
-    Write-Host "║                                                           ║" -ForegroundColor Green
-    Write-Host "║     ✅ OpenClaw 汉化版安装成功！                          ║" -ForegroundColor Green
-    Write-Host "║                                                           ║" -ForegroundColor Green
-    Write-Host "╚═══════════════════════════════════════════════════════════╝" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "📦 已安装版本：$VersionName (@$NpmTag)" -ForegroundColor Cyan
-    Write-Host ""
-    if ($Nightly) {
-        Write-Host "⚠  提示：您安装的是最新版，追踪上游最新代码，可能不够稳定。" -ForegroundColor Yellow
-        Write-Host "   切换到稳定版：npm install -g @qingchencloud/openclaw-zh@latest" -ForegroundColor Yellow
-        Write-Host ""
-    }
+    Write-Host "✅ OpenClaw 汉化版安装成功！" -ForegroundColor Green
     Write-Host "🚀 快速开始：" -ForegroundColor Cyan
+    Write-Host "   openclaw onboard          # 启动初始化向导"
+    Write-Host "   openclaw dashboard        # 打开控制面板"
     Write-Host ""
-    Write-Host "   openclaw onboard          # 启动初始化向导（首次必须运行）"
-    Write-Host "   openclaw onboard --install-daemon  # 安装后台守护进程"
-    Write-Host "   openclaw                  # 启动 OpenClaw"
-    Write-Host "   openclaw --help           # 查看帮助"
-    Write-Host ""
-    Write-Host "💡 OpenClaw 是什么？" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "   开源个人 AI 助手平台，可通过 WhatsApp/Telegram/Discord 等"
-    Write-Host "   聊天应用与你的 AI 助手交互，管理邮件、日历、文件等一切事务。"
-    Write-Host ""
-    Write-Host "⚠️  远程访问常见问题：" -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "   如果 Dashboard 显示 'gateway token mismatch' 错误:"
-    Write-Host ""
-    Write-Host "   方法1: " -ForegroundColor Cyan -NoNewline
-    Write-Host "使用命令自动打开带 token 的 Dashboard"
-    Write-Host "          openclaw dashboard"
-    Write-Host ""
-    Write-Host "   方法2: " -ForegroundColor Cyan -NoNewline
-    Write-Host "手动设置 token 后访问"
-    Write-Host "          openclaw config set gateway.auth.token 你的密码"
-    Write-Host "          然后在浏览器 URL 后加 ?token=你的密码"
-    Write-Host ""
-    Write-Host "📚 更多信息：" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "   汉化官网: https://openclaw.qt.cool/"
-    Write-Host "   原版官网: https://openclaw.ai/"
-    Write-Host "   GitHub:   https://github.com/1186258278/OpenClawChineseTranslation"
-    Write-Host ""
+    Write-Host "详细文档: https://openclaw.qt.cool/"
 }
 
 # 主流程
 function Main {
-    Show-Banner
-    
-    Write-Host "🔍 环境检查..." -ForegroundColor Blue
-    Write-Host ""
-    
-    Test-NodeVersion
-    Test-Npm
-    
-    Write-Host ""
-    Remove-OriginalOpenClaw
-    Install-ChineseVersion
+    Test-Environment
+    Invoke-ChinesePatch
     Invoke-SetupIfNeeded
     Show-Success
 }

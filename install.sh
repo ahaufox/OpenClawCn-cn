@@ -2,15 +2,9 @@
 # ============================================================
 # OpenClaw 汉化发行版 - 一键安装脚本
 # 
-# OpenClaw: 开源个人 AI 助手平台
-# 官方网站: https://openclaw.ai/
-# 汉化项目: https://openclaw.qt.cool/
-#
-# 武汉晴辰天下网络科技有限公司 | https://qingchencloud.com/
-#
 # 用法:
-#   curl -fsSL https://xxx/install.sh | bash           # 安装稳定版
-#   curl -fsSL https://xxx/install.sh | bash -s -- --nightly  # 安装最新版
+#   curl -fsSL https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.sh | bash           # 安装稳定版
+#   curl -fsSL https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.sh | bash -s -- --nightly  # 安装最新版
 # ============================================================
 
 set -e
@@ -46,9 +40,9 @@ while [[ $# -gt 0 ]]; do
             echo "OpenClaw 汉化版安装脚本"
             echo ""
             echo "用法:"
-            echo "  curl -fsSL https://xxx/install.sh | bash                   # 安装稳定版"
-            echo "  curl -fsSL https://xxx/install.sh | bash -s -- --nightly   # 安装最新版"
-            echo "  curl -fsSL https://xxx/install.sh | bash -s -- --shengsuanyun-key sk-xxx  # 安装并配置胜算云"
+            echo "  curl -fsSL https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.sh | bash                   # 安装稳定版"
+            echo "  curl -fsSL https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.sh | bash -s -- --nightly   # 安装最新版"
+            echo "  curl -fsSL https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.sh | bash -s -- --shengsuanyun-key sk-xxx  # 安装并配置胜算云"
             echo ""
             echo "选项:"
             echo "  --nightly              安装最新版（每小时自动构建，追踪上游最新代码）"
@@ -71,20 +65,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Logo
-print_banner() {
-    echo -e "${CYAN}"
-    echo "╔═══════════════════════════════════════════════════════════╗"
-    echo "║                                                           ║"
-    echo "║     🦞 OpenClaw 汉化发行版                                ║"
-    echo "║        开源个人 AI 助手平台                              ║"
-    echo "║                                                           ║"
-    echo "║     武汉晴辰天下网络科技有限公司                          ║"
-    echo "║     https://openclaw.qt.cool/                             ║"
-    echo "║                                                           ║"
-    echo "╚═══════════════════════════════════════════════════════════╝"
-    echo -e "${NC}"
-}
 
 # 检查命令是否存在
 check_command() {
@@ -131,25 +111,42 @@ check_npm() {
     echo -e "${GREEN}✓${NC} npm 版本: v$NPM_VERSION"
 }
 
-# 卸载原版（如果存在）
-uninstall_original() {
-    if npm list -g openclaw &> /dev/null; then
-        echo -e "${YELLOW}⚠${NC} 检测到原版 OpenClaw，正在卸载..."
-        npm uninstall -g openclaw 2>/dev/null || true
-        echo -e "${GREEN}✓${NC} 原版已卸载"
+# 检查环境并准备安装
+prepare_install() {
+    echo -e "${BLUE}🔍 环境检查...${NC}"
+    check_node_version
+    check_npm
+
+    # 检测是否在本项目源码目录下
+    if [ -d "./cli" ] && [ -d "./translations" ] && [ -d "./openclaw" ]; then
+        echo -e "${YELLOW}📂 检测到您当前处于 OpenClaw 汉化版源码目录${NC}"
+        read -p "是否直接对本地 './openclaw' 源码进行汉化？(y/n) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${BLUE}🛠️  正在应用本地汉化补丁...${NC}"
+            node cli/index.mjs apply --target=./openclaw
+            exit 0
+        fi
+    fi
+
+    # 检查原版 OpenClaw 是否已安装
+    if ! npm list -g openclaw &> /dev/null; then
+        echo -e "${YELLOW}⚠ 正在安装原版 OpenClaw...${NC}"
+        npm install -g openclaw
     fi
 }
 
-# 安装汉化版
-install_chinese() {
-    echo ""
-    echo -e "${BLUE}📦 正在安装 OpenClaw 汉化版 [${VERSION_NAME}]...${NC}"
-    echo ""
+# 安装/运行汉化补丁 (通过 npx)
+apply_chinese_patch() {
+    echo -e "${BLUE}📦 正在获取并应用汉化补丁...${NC}"
     
-    npm install -g @qingchencloud/openclaw-zh@${NPM_TAG}
-    
-    echo ""
-    echo -e "${GREEN}✓${NC} 安装完成！"
+    # 使用 npx 运行补丁工具
+    if npx -y @qingchencloud/openclaw-zh@${NPM_TAG} apply; then
+        echo -e "${GREEN}✓ 汉化成功！${NC}"
+    else
+        echo -e "${RED}❌ 汉化失败${NC}"
+        exit 1
+    fi
 }
 
 # 运行安装后自动初始化 (条件性)
@@ -201,10 +198,7 @@ run_setup_if_needed() {
         return 0
     fi
     
-    echo ""
-    echo -e "${BLUE}🔧 正在运行初始化配置...${NC}"
-    echo -e "${YELLOW}   (设置环境变量 OPENCLAW_SKIP_SETUP=1 可跳过此步骤)${NC}"
-    echo ""
+    echo -e "${BLUE}🔧 自动初始化...${NC}"
     
     # 尝试运行非交互式 setup
     if openclaw setup --non-interactive 2>/dev/null; then
@@ -216,64 +210,18 @@ run_setup_if_needed() {
 
 # 打印成功信息
 print_success() {
+    echo -e "${GREEN}✅ OpenClaw 汉化版安装成功！${NC}"
+    echo -e "${CYAN} 快速开始：${NC}"
+    echo "   openclaw onboard          # 启动初始化向导"
+    echo "   openclaw dashboard        # 打开控制面板"
     echo ""
-    echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║                                                           ║${NC}"
-    echo -e "${GREEN}║     ✅ OpenClaw 汉化版安装成功！                          ║${NC}"
-    echo -e "${GREEN}║                                                           ║${NC}"
-    echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
-    echo ""
-    echo -e "${CYAN}📦 已安装版本：${VERSION_NAME} (@${NPM_TAG})${NC}"
-    echo ""
-    if [ "$INSTALL_NIGHTLY" = true ]; then
-        echo -e "${YELLOW}⚠  提示：您安装的是最新版，追踪上游最新代码，可能不够稳定。${NC}"
-        echo -e "${YELLOW}   切换到稳定版：npm install -g @qingchencloud/openclaw-zh@latest${NC}"
-        echo ""
-    fi
-    echo -e "${CYAN}🚀 快速开始：${NC}"
-    echo ""
-    echo "   openclaw onboard          # 启动初始化向导（首次必须运行）"
-    echo "   openclaw onboard --install-daemon  # 安装后台守护进程"
-    echo "   openclaw                  # 启动 OpenClaw"
-    echo "   openclaw --help           # 查看帮助"
-    echo ""
-    echo -e "${CYAN}💡 OpenClaw 是什么？${NC}"
-    echo ""
-    echo "   开源个人 AI 助手平台，可通过 WhatsApp/Telegram/Discord 等"
-    echo "   聊天应用与你的 AI 助手交互，管理邮件、日历、文件等一切事务。"
-    echo ""
-    echo -e "${YELLOW}⚠️  远程访问常见问题：${NC}"
-    echo ""
-    echo "   如果 Dashboard 显示 'gateway token mismatch' 错误:"
-    echo ""
-    echo "   ${CYAN}方法1:${NC} 使用命令自动打开带 token 的 Dashboard"
-    echo "          openclaw dashboard"
-    echo ""
-    echo "   ${CYAN}方法2:${NC} 手动设置 token 后访问"
-    echo "          openclaw config set gateway.auth.token 你的密码"
-    echo "          然后在浏览器 URL 后加 ?token=你的密码"
-    echo ""
-    echo -e "${CYAN}📚 更多信息：${NC}"
-    echo ""
-    echo "   汉化官网: https://openclaw.qt.cool/"
-    echo "   原版官网: https://openclaw.ai/"
-    echo "   GitHub:   https://github.com/1186258278/OpenClawChineseTranslation"
-    echo ""
+    echo "详细文档: https://openclaw.qt.cool/"
 }
 
 # 主流程
 main() {
-    print_banner
-    
-    echo -e "${BLUE}🔍 环境检查...${NC}"
-    echo ""
-    
-    check_node_version
-    check_npm
-    
-    echo ""
-    uninstall_original
-    install_chinese
+    prepare_install
+    apply_chinese_patch
     run_setup_if_needed
     print_success
 }
