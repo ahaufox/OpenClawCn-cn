@@ -13,45 +13,45 @@ on:
   workflow_call:
     inputs:
       version_type:
-        description: '版本类型: nightly 或 stable'
+        description: "版本类型: nightly 或 stable"
         required: true
         type: string
       version:
-        description: '版本号'
+        description: "版本号"
         required: true
         type: string
       upstream_version:
-        description: '上游版本号'
+        description: "上游版本号"
         required: true
         type: string
       upstream_sha:
-        description: '上游 commit SHA（可选，用于记录）'
+        description: "上游 commit SHA（可选，用于记录）"
         required: false
         type: string
-        default: ''
+        default: ""
     outputs:
       applied:
-        description: '应用的翻译规则数'
+        description: "应用的翻译规则数"
         value: ${{ jobs.build.outputs.applied }}
       existed:
-        description: '已存在的规则数'
+        description: "已存在的规则数"
         value: ${{ jobs.build.outputs.existed }}
       failed:
-        description: '未匹配的规则数'
+        description: "未匹配的规则数"
         value: ${{ jobs.build.outputs.failed }}
       files:
-        description: '替换操作次数'
+        description: "替换操作次数"
         value: ${{ jobs.build.outputs.files }}
       build_date:
-        description: '构建日期'
+        description: "构建日期"
         value: ${{ jobs.build.outputs.build_date }}
       build_time:
-        description: '构建时间'
+        description: "构建时间"
         value: ${{ jobs.build.outputs.build_time }}
 
 env:
   UPSTREAM_REPO: openclaw/openclaw
-  NODE_VERSION: '22'
+  NODE_VERSION: "22"
 
 jobs:
   build:
@@ -74,7 +74,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
@@ -88,6 +88,7 @@ jobs:
       - name: 配置 pnpm 缓存
         uses: actions/cache@v4
         with:
+          # STORE_PATH 变量是在上一阶段动态生成的，IDE 警告可忽略
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
@@ -122,31 +123,31 @@ jobs:
           # 运行汉化并捕获输出
           OUTPUT=$(node cli/index.mjs apply --verbose 2>&1) || true
           echo "$OUTPUT"
-          
+
           # 从机器可读的统计行提取数据（格式: ##STATS##applied=N|existed=N|failed=N##）
           STATS_LINE=$(echo "$OUTPUT" | grep -o '##STATS##[^#]*##' | head -1)
-          
+
           if [ -n "$STATS_LINE" ]; then
             APPLIED=$(echo "$STATS_LINE" | grep -o 'applied=[0-9]*' | cut -d= -f2)
             EXISTED=$(echo "$STATS_LINE" | grep -o 'existed=[0-9]*' | cut -d= -f2)
             FAILED=$(echo "$STATS_LINE" | grep -o 'failed=[0-9]*' | cut -d= -f2)
           fi
-          
+
           # 统计替换操作次数（剥离 ANSI 后计数）
           CLEAN=$(echo "$OUTPUT" | sed $'s/\x1b\\[[0-9;]*m//g')
           FILES_COUNT=$(echo "$CLEAN" | grep -c "^  替换:" || echo "0")
-          
+
           # 确保所有值都是纯数字，防止写入 GITHUB_OUTPUT 时出错
           [[ ! "$APPLIED" =~ ^[0-9]+$ ]] && APPLIED="0"
           [[ ! "$EXISTED" =~ ^[0-9]+$ ]] && EXISTED="0"
           [[ ! "$FAILED" =~ ^[0-9]+$ ]] && FAILED="0"
           [[ ! "$FILES_COUNT" =~ ^[0-9]+$ ]] && FILES_COUNT="0"
-          
+
           echo "applied=$APPLIED" >> $GITHUB_OUTPUT
           echo "existed=$EXISTED" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "files=$FILES_COUNT" >> $GITHUB_OUTPUT
-          
+
           echo ""
           echo "📊 汉化统计："
           echo "   ✅ 应用规则: $APPLIED 条"
@@ -178,7 +179,7 @@ jobs:
           pnpm install --no-frozen-lockfile
           pnpm run build
           echo "✅ 核心构建完成"
-          
+
       - name: 构建 Dashboard UI
         working-directory: openclaw
         run: |
@@ -225,7 +226,7 @@ jobs:
           elif ls openclaw/dist/control-ui/assets/index-*.js 1>/dev/null 2>&1; then
             JS_FILE=$(ls openclaw/dist/control-ui/assets/index-*.js | head -1)
           fi
-          
+
           if [ -n "$JS_FILE" ]; then
             echo "JS 文件: $JS_FILE"
             echo "文件大小: $(ls -la "$JS_FILE" | awk '{print $5}') bytes"
@@ -246,24 +247,24 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           VERSION_TYPE="${{ inputs.version_type }}"
-          
+
           echo "build_date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
           echo "build_time=$(date +%H:%M)" >> $GITHUB_OUTPUT
           echo "📦 版本: $VERSION ($VERSION_TYPE)"
-          
+
           # 更新 package.json
           cd openclaw
           npm version $VERSION --no-git-tag-version --allow-same-version || true
-          
+
           # 修改包信息
           if [ "$VERSION_TYPE" = "nightly" ]; then
             jq '.description = "OpenClaw 汉化发行版 (Nightly) - 武汉晴辰天下网络科技有限公司"' package.json > tmp.json && mv tmp.json package.json
           else
             jq '.description = "OpenClaw 汉化发行版（稳定版）- 武汉晴辰天下网络科技有限公司"' package.json > tmp.json && mv tmp.json package.json
           fi
-          
+
           jq '.name = "@qingchencloud/openclaw-zh"' package.json > tmp.json && mv tmp.json package.json
-          
+
           # 使用中文 README
           cp ../README.md ./README.md
 
@@ -272,19 +273,19 @@ jobs:
           # 复制 Dockerfile 和 .dockerignore 到构建目录
           cp Dockerfile openclaw/Dockerfile
           cp .dockerignore openclaw/.dockerignore 2>/dev/null || true
-          
+
           # 验证构建产物存在
           echo "📦 检查构建产物..."
           ls -la openclaw/
           ls -la openclaw/dist/ || echo "⚠️ dist/ 目录不存在"
           ls -la openclaw/node_modules/ | head -20 || echo "⚠️ node_modules/ 目录不存在"
-          
+
           # 确保 dist 目录存在
           if [ ! -d "openclaw/dist" ]; then
             echo "❌ 错误：dist/ 目录不存在，Docker 构建将失败"
             exit 1
           fi
-          
+
           echo "✅ Docker 构建准备完成"
 
       - name: 上传构建产物
