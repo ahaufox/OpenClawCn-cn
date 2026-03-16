@@ -222,16 +222,6 @@ jobs:
             ```
 
             ---
-
-            ### 🔗 相关链接
-
-            - 🔥 官网: https://openclaw.qt.cool/
-            - 📖 稳定版: https://github.com/1186258278/OpenClawChineseTranslation/releases/latest
-            - 📦 npm: https://www.npmjs.com/package/@qingchencloud/openclaw-zh
-
-            ---
-
-            **武汉晴辰天下网络科技有限公司** | https://qingchencloud.com/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

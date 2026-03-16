@@ -2,7 +2,7 @@
 # OpenClaw 汉化发行版 - 稳定版发布工作流
 # 武汉晴辰天下网络科技有限公司 | https://qingchencloud.com/
 # ============================================================
-# 
+#
 # 触发方式：
 #   1. 推送 tag（格式：v*，如 v2026.1.30-zh.1）
 #   2. 手动触发（用于紧急发布）
@@ -20,17 +20,17 @@ name: 稳定版发布
 on:
   push:
     tags:
-      - 'v*'  # 监听所有 v 开头的 tag
+      - "v*" # 监听所有 v 开头的 tag
   workflow_dispatch:
     inputs:
       version:
-        description: '发布版本号（如 2026.1.30-zh.1，不含 v 前缀）'
+        description: "发布版本号（如 2026.1.30-zh.1，不含 v 前缀）"
         required: true
         type: string
 
 env:
   UPSTREAM_REPO: openclaw/openclaw
-  NODE_VERSION: '22'
+  NODE_VERSION: "22"
 
 permissions:
   contents: write
@@ -43,7 +43,7 @@ jobs:
     outputs:
       release_version: ${{ steps.version.outputs.release_version }}
       upstream_version: ${{ steps.upstream.outputs.version }}
-    
+
     steps:
       - name: 确定版本号
         id: version
@@ -56,7 +56,7 @@ jobs:
             # 手动触发时使用输入的版本号
             VERSION="${{ inputs.version }}"
           fi
-          
+
           echo "release_version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 发布版本: $VERSION"
 
@@ -81,7 +81,7 @@ jobs:
   publish:
     needs: [prepare, build]
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -96,7 +96,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: 发布到 npm (@latest)
         working-directory: openclaw
@@ -132,57 +132,44 @@ jobs:
           name: "🦞 OpenClaw 汉化版 v${{ needs.prepare.outputs.release_version }}"
           body: |
             ## 🦞 OpenClaw 汉化发行版 - 稳定版
-            
+
             **版本**: v${{ needs.prepare.outputs.release_version }}
             **上游版本**: ${{ needs.prepare.outputs.upstream_version }}
             **发布类型**: 稳定版 (Stable)
-            
+
             ---
-            
+
             ### 📊 汉化统计
-            
+
             | 指标 | 数量 | 说明 |
             |------|------|------|
             | ✅ 应用规则 | **${{ needs.build.outputs.applied }}** 条 | 成功应用的翻译规则 |
             | ⏭️ 已存在 | ${{ needs.build.outputs.existed }} 条 | 翻译已存在，跳过 |
             | ⚠️ 未匹配 | ${{ needs.build.outputs.failed }} 条 | 源码变更导致未匹配 |
             | 📝 替换操作 | ${{ needs.build.outputs.files }} 次 | 实际执行的替换次数 |
-            
+
             ---
-            
+
             ### 📦 安装方式
-            
+
             **稳定版（推荐）：**
             ```bash
             npm install -g @qingchencloud/openclaw-zh@latest
             ```
-            
+
             **最新版（每小时更新）：**
             ```bash
             npm install -g @qingchencloud/openclaw-zh@nightly
             ```
-            
+
             **一键安装脚本：**
             ```bash
             # Linux/macOS
             curl -fsSL https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.sh | bash
-            
+
             # Windows PowerShell
             powershell -c "irm https://cdn.jsdelivr.net/gh/1186258278/OpenClawChineseTranslation@main/install.ps1 | iex"
             ```
-            
-            ---
-            
-            ### 🔗 相关链接
-            
-            - 🔥 官网: https://openclaw.qt.cool/
-            - 📖 文档: https://github.com/1186258278/OpenClawChineseTranslation
-            - 📦 npm: https://www.npmjs.com/package/@qingchencloud/openclaw-zh
-            - 🌙 最新版: https://github.com/1186258278/OpenClawChineseTranslation/releases/tag/nightly
-            
-            ---
-            
-            **武汉晴辰天下网络科技有限公司** | https://qingchencloud.com/
           draft: false
           prerelease: false
         env:

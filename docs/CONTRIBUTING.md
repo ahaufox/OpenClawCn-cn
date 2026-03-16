@@ -109,15 +109,15 @@ OpenClawChineseTranslation/
 
 ## 汉化 CLI 工具
 
-| 命令 | 说明 |
-|------|------|
-| `npm run cli -- status` | 查看当前汉化状态 |
-| `npm run cli -- apply` | 应用汉化补丁 |
-| `npm run cli -- apply --dry-run` | 预览汉化（不实际修改） |
-| `npm run cli -- apply --verbose` | 详细输出汉化过程 |
-| `npm run cli -- apply --target=../openclaw` | 指定目标目录 |
-| `npm run cli -- verify` | 验证汉化结果 |
-| `npm run cli -- restore` | 恢复原版（使用 git checkout） |
+| 命令                                        | 说明                          |
+| ------------------------------------------- | ----------------------------- |
+| `npm run cli -- status`                     | 查看当前汉化状态              |
+| `npm run cli -- apply`                      | 应用汉化补丁                  |
+| `npm run cli -- apply --dry-run`            | 预览汉化（不实际修改）        |
+| `npm run cli -- apply --verbose`            | 详细输出汉化过程              |
+| `npm run cli -- apply --target=../openclaw` | 指定目标目录                  |
+| `npm run cli -- verify`                     | 验证汉化结果                  |
+| `npm run cli -- restore`                    | 恢复原版（使用 git checkout） |
 
 <p align="right"><a href="#top">回到顶部</a></p>
 
@@ -249,18 +249,18 @@ npm run cli -- verify
 
 ### 常用术语对照
 
-| 英文 | 中文 |
-|------|------|
-| Agent | 代理 |
-| Channel | 渠道 |
-| Gateway | 网关 |
-| Skill | 技能 |
-| Session | 会话 |
-| Workspace | 工作区 |
-| Dashboard | 控制台 |
-| Cron Job | 定时任务 |
-| Node | 节点 |
-| Instance | 实例 |
+| 英文      | 中文     |
+| --------- | -------- |
+| Agent     | 代理     |
+| Channel   | 渠道     |
+| Gateway   | 网关     |
+| Skill     | 技能     |
+| Session   | 会话     |
+| Workspace | 工作区   |
+| Dashboard | 控制台   |
+| Cron Job  | 定时任务 |
+| Node      | 节点     |
+| Instance  | 实例     |
 
 <p align="right"><a href="#top">回到顶部</a></p>
 
@@ -288,19 +288,5 @@ npm run cli -- verify
 - 尊重他人
 - 接受建设性批评
 - 专注于改进项目
-
-<p align="right"><a href="#top">回到顶部</a></p>
-
----
-
-<a id="contact"></a>
-
-## 联系我们
-
-- GitHub Issues: [提交问题](https://github.com/1186258278/OpenClawChineseTranslation/issues)
-- 官网: https://openclaw.qt.cool/
-- 公司官网: https://qingchencloud.com/
-
-感谢你的贡献！
 
 <p align="right"><a href="#top">回到顶部</a></p>
