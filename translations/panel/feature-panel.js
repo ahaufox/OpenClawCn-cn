@@ -1,6 +1,5 @@
 /* ============================================================
  * OpenClaw 汉化版 - 功能面板
- * 武汉晴辰天下网络科技有限公司 | https://qingchencloud.com/
  * ============================================================ */
 
 (function() {
@@ -12,13 +11,13 @@
     plugins: [],
     about: {
       project: "OpenClaw 汉化发行版",
-      company: "武汉晴辰天下网络科技有限公司",
-      website: "https://openclaw.qt.cool/",
-      github: "https://github.com/1186258278/OpenClawChineseTranslation",
-      npm: "https://www.npmjs.com/package/@qingchencloud/openclaw-zh",
-      companyWebsite: "https://qingchencloud.com/",
-      qqGroup: "https://qt.cool/c/OpenClaw",
-      wechatGroup: "https://qt.cool/c/OpenClawWx",
+      company: "",
+      website: "",
+      github: "",
+      npm: "",
+      companyWebsite: "",
+      qqGroup: "",
+      wechatGroup: "",
       license: "MIT License"
     }
   }/*END_PANEL_DATA*/;
@@ -255,9 +254,9 @@
   const SSY_MODELS_API = SSY_PROVIDER.modelsApi || 'https://router.shengsuanyun.com/api/v1/models';
   const SSY_MULTIMODAL_API = SSY_PROVIDER.multimodalApi || 'https://router.shengsuanyun.com/api/v1/models/multimodal';
   const SSY_WEBSITE = SSY_PROVIDER.website || 'https://www.shengsuanyun.com';
-  const SSY_API_KEY_URL = SSY_PROVIDER.apiKeyUrl || 'https://shengsuanyun.com/?from=CH_4BVI0BM2';
-  const SSY_AFFILIATE_PARAM = SSY_PROVIDER.affiliateParam || 'from=CH_4BVI0BM2';
-  const SSY_PROMO_TEXT = SSY_PROVIDER.promoText || '🎁 新用户送10元';
+  const SSY_API_KEY_URL = SSY_PROVIDER.apiKeyUrl || 'https://shengsuanyun.com';
+  const SSY_AFFILIATE_PARAM = SSY_PROVIDER.affiliateParam || '';
+  const SSY_PROMO_TEXT = SSY_PROVIDER.promoText || '';
   const SSY_PROMO_NOTE = SSY_PROVIDER.promoNote || '';
   const SSY_GET_KEY_TEXT = SSY_PROVIDER.getKeyText || '点此获取 API Key';
   const SSY_FOOTER_TEXT = SSY_PROVIDER.footerText || '生成的内容仅供参考 · API 费用由胜算云收取';
@@ -295,12 +294,13 @@
     const param = SSY_AFFILIATE_PARAM;
     if (!path) {
       // 主页链接
+      if (!param) return base;
       const sep = base.includes('?') ? '&' : '?';
       return `${base}${sep}${param}`;
     }
     // 子路径链接（如 /user/keys）
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    return `${base}${cleanPath}?${param}`;
+    return param ? `${base}${cleanPath}?${param}` : `${base}${cleanPath}`;
   }
 
   function getSSYApiKey() {
@@ -2311,34 +2311,7 @@
       <div class="about-section">
         <div class="about-logo">${ICONS.lobster}</div>
         <h3 class="about-title">${about.project}</h3>
-        <p class="about-company">${about.company}</p>
-        <div class="about-links">
-          <a class="about-link" href="${about.website}" target="_blank" rel="noreferrer">
-            ${ICONS.globe}
-            <span>官网</span>
-          </a>
-          <a class="about-link" href="${about.github}" target="_blank" rel="noreferrer">
-            ${ICONS.github}
-            <span>GitHub</span>
-          </a>
-          <a class="about-link" href="${about.npm}" target="_blank" rel="noreferrer">
-            ${ICONS.package}
-            <span>npm</span>
-          </a>
-          <a class="about-link" href="${about.companyWebsite}" target="_blank" rel="noreferrer">
-            ${ICONS.globe}
-            <span>公司官网</span>
-          </a>
-          <a class="about-link" href="${about.qqGroup}" target="_blank" rel="noreferrer">
-            ${ICONS.message}
-            <span>QQ群</span>
-          </a>
-          <a class="about-link" href="${about.wechatGroup}" target="_blank" rel="noreferrer">
-            ${ICONS.message}
-            <span>微信群</span>
-          </a>
-        </div>
-        <p class="about-copyright">© 2026 ${about.company} | ${about.license}</p>
+        <p class="about-copyright">${about.license}</p>
       </div>
     `;
   }
